@@ -1,5 +1,5 @@
 // API KEY de Google
-const API_KEY = "AIzaSyC85enVkglYwFKYFl46x5ubpSx5sBWLt-8"; 
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 // Función de diagnóstico para ver qué modelos ve tu clave
 export const listarModelosDisponibles = async () => {
