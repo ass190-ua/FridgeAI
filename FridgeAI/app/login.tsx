@@ -1,40 +1,50 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Text, StatusBar, ScrollView } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Text, StatusBar, ScrollView, Keyboard } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Toast } from '@/components/ui/Toast';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   
-  // NUEVOS ESTADOS
-  const [confirmPassword, setConfirmPassword] = useState(''); // Para verificar pass
-  const [showPassword, setShowPassword] = useState(false);    // Para el ojito
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  // Estado único para notificaciones
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success'|'error' });
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
   const router = useRouter();
 
-  // --- FUNCIÓN 1: AUTENTICACIÓN (LOGIN O REGISTRO) ---
+  // Helper para mostrar mensajes rápido
+  const showToast = (msg: string, type: 'success'|'error' = 'error') => {
+    setToast({ visible: true, message: msg, type });
+  };
+
+  // Autenticación (login o registro)
   async function handleAuth() {
+    Keyboard.dismiss();
     setLoading(true);
     
-    // 1. Validaciones básicas
+    // Validaciones
     if (!email || !password) {
-      Alert.alert("Faltan datos", "Por favor escribe email y contraseña.");
+      showToast("⚠️ Por favor completa todos los campos", 'error');
       setLoading(false);
       return;
     }
 
-    // 2. Validación extra SOLO para Registro
     if (isRegistering) {
       if (password !== confirmPassword) {
-        Alert.alert("Error", "Las contraseñas no coinciden. Compruébalo.");
+        showToast("⚠️ Las contraseñas no coinciden", 'error');
         setLoading(false);
         return;
       }
       if (password.length < 6) {
-        Alert.alert("Seguridad", "La contraseña debe tener al menos 6 caracteres.");
+        showToast("⚠️ La contraseña es muy corta (mín. 6)", 'error');
         setLoading(false);
         return;
       }
@@ -43,58 +53,52 @@ export default function LoginScreen() {
     let error;
 
     if (isRegistering) {
-      // REGISTRARSE
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-      });
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
       error = signUpError;
-      if (!error) Alert.alert('¡Casi listo!', 'Te hemos enviado un email para confirmar tu cuenta.');
+      if (!error) {
+         showToast("✅ ¡Cuenta creada! Revisa tu email.", 'success');
+      }
     } else {
-      // INICIAR SESIÓN
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-      });
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       error = signInError;
     }
 
-    if (error) Alert.alert('Error', error.message);
+    if (error) showToast(error.message, 'error');
     setLoading(false);
   }
 
-  // --- FUNCIÓN 2: RECUPERAR CONTRASEÑA ---
+  // Recuperar contraseña
   async function handleResetPassword() {
-    if (!email) return Alert.alert("Falta el email", "Escribe tu correo arriba.");
+    Keyboard.dismiss();
+    if (!email) {
+      showToast("Escribe tu correo arriba primero", 'error');
+      return;
+    }
     
     setLoading(true);
     
-    // Usamos signInWithOtp para generar un código de 6 dígitos
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email,
-    });
+    const { error } = await supabase.auth.signInWithOtp({ email });
     
     setLoading(false);
 
     if (error) {
-      Alert.alert("Error", error.message);
+      showToast(error.message, 'error');
     } else {
-      // Si todo va bien, vamos a la pantalla de poner el código
-      router.push({ pathname: '/verify-code', params: { email: email } });
-      Alert.alert("Código enviado", "Revisa tu correo y copia el número.");
+      // Mostramos Toast y navegamos tras un pequeño delay para que se lea
+      showToast("📩 Código enviado. Revisa tu correo.", 'success');
+      
+      setTimeout(() => {
+          router.push({ pathname: '/verify-code', params: { email: email } });
+      }, 1500);
     }
   }
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#121212" />
       
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         
-        {/* LOGO */}
         <View style={styles.header}>
           <View style={styles.iconCircle}>
             <Text style={{fontSize: 40}}>🧊</Text>
@@ -103,12 +107,11 @@ export default function LoginScreen() {
           <Text style={styles.subtitle}>Tu cocina inteligente</Text>
         </View>
 
-        {/* FORMULARIO */}
         <View style={styles.form}>
           
-          {/* EMAIL */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+          {/* Email */}
+          <View style={[styles.inputContainer, focusedInput === 'email' && styles.inputFocused]}>
+            <Ionicons name="mail-outline" size={20} color={focusedInput === 'email' ? "#818CF8" : "#666"} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               onChangeText={setEmail}
@@ -117,30 +120,34 @@ export default function LoginScreen() {
               placeholderTextColor="#666"
               autoCapitalize="none"
               keyboardType="email-address"
+              onFocus={() => setFocusedInput('email')}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
 
-          {/* CONTRASEÑA (Con Ojito) */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+          {/* Contraseña */}
+          <View style={[styles.inputContainer, focusedInput === 'pass' && styles.inputFocused]}>
+            <Ionicons name="lock-closed-outline" size={20} color={focusedInput === 'pass' ? "#818CF8" : "#666"} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               onChangeText={setPassword}
               value={password}
               placeholder="Contraseña"
               placeholderTextColor="#666"
-              secureTextEntry={!showPassword} // Aquí está la magia
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
+              onFocus={() => setFocusedInput('pass')}
+              onBlur={() => setFocusedInput(null)}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{padding: 5}}>
               <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#666" />
             </TouchableOpacity>
           </View>
 
-          {/* CONFIRMAR CONTRASEÑA (Solo en Registro) */}
+          {/* Confirmar contraseña */}
           {isRegistering && (
-            <View style={styles.inputContainer}>
-              <Ionicons name="shield-checkmark-outline" size={20} color="#666" style={styles.inputIcon} />
+            <View style={[styles.inputContainer, focusedInput === 'confirm' && styles.inputFocused]}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={focusedInput === 'confirm' ? "#818CF8" : "#666"} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 onChangeText={setConfirmPassword}
@@ -149,26 +156,20 @@ export default function LoginScreen() {
                 placeholderTextColor="#666"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                onFocus={() => setFocusedInput('confirm')}
+                onBlur={() => setFocusedInput(null)}
               />
             </View>
           )}
 
-          {/* BOTÓN DE ACCIÓN */}
-          <TouchableOpacity 
-            style={styles.primaryButton} 
-            onPress={handleAuth} 
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
+          <TouchableOpacity style={styles.primaryButton} onPress={handleAuth} disabled={loading}>
+            {loading ? <ActivityIndicator color="white" /> : (
               <Text style={styles.primaryButtonText}>
                 {isRegistering ? 'Crear cuenta gratis' : 'Entrar en mi cocina'}
               </Text>
             )}
           </TouchableOpacity>
 
-          {/* LINK OLVIDÉ CONTRASEÑA (Solo en Login) */}
           {!isRegistering && (
             <TouchableOpacity onPress={handleResetPassword} style={styles.forgotButton}>
               <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
@@ -177,15 +178,11 @@ export default function LoginScreen() {
 
         </View>
 
-        {/* CAMBIO DE MODO */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             {isRegistering ? '¿Ya tienes cuenta?' : '¿Eres nuevo aquí?'}
           </Text>
-          <TouchableOpacity onPress={() => {
-            setIsRegistering(!isRegistering);
-            setConfirmPassword(''); // Limpiamos el campo al cambiar
-          }}>
+          <TouchableOpacity onPress={() => { setIsRegistering(!isRegistering); setToast({visible: false, message:'', type:'success'}); }}>
             <Text style={styles.linkText}>
               {isRegistering ? ' Inicia Sesión' : ' Regístrate ahora'}
             </Text>
@@ -193,48 +190,38 @@ export default function LoginScreen() {
         </View>
 
       </ScrollView>
+
+      {/* TOAST flotante*/}
+      <Toast {...toast} onHide={() => setToast(prev => ({...prev, visible: false}))} />
+
     </KeyboardAvoidingView>
   );
 }
 
-// ESTILOS DARK MODE
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   scrollContent: { flexGrow: 1, padding: 30, justifyContent: 'center' },
   
-  header: { alignItems: 'center', marginBottom: 40, marginTop: 20 },
-  iconCircle: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: '#1E1E1E',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
-    borderWidth: 1, borderColor: '#333',
-    shadowColor: '#818CF8', shadowOffset: {width:0, height:4}, shadowOpacity:0.2, shadowRadius:10, elevation:5
-  },
-  appName: { fontSize: 36, fontWeight: '800', color: '#FFF', letterSpacing: -1 },
+  header: { alignItems: 'center', marginBottom: 40 },
+  iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#1E1E1E', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#333' },
+  appName: { fontSize: 36, fontWeight: '800', color: '#FFF' },
   brandColor: { color: '#818CF8' },
-  subtitle: { color: '#888', marginTop: 5, fontSize: 16 },
+  subtitle: { color: '#888', marginTop: 5 },
 
   form: { gap: 15, marginBottom: 30 },
-  inputContainer: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E1E1E', borderRadius: 12,
-    borderWidth: 1, borderColor: '#333',
-    height: 55, paddingHorizontal: 15
-  },
+  
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 12, borderWidth: 1, borderColor: '#333', height: 55, paddingHorizontal: 15 },
+  inputFocused: { borderColor: '#818CF8', backgroundColor: '#1A1A2E' }, 
   inputIcon: { marginRight: 10 },
   input: { flex: 1, color: '#FFF', fontSize: 16, height: '100%' },
   
-  forgotButton: { alignSelf: 'flex-end', paddingVertical: 5 },
-  forgotText: { color: '#888', fontSize: 14, textDecorationLine: 'underline' },
+  forgotButton: { alignSelf: 'center', paddingVertical: 10, marginTop: 5 },
+  forgotText: { color: '#888', fontSize: 14 },
 
-  primaryButton: { 
-    backgroundColor: '#818CF8', height: 55, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', marginTop: 10,
-    shadowColor: '#818CF8', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 10, elevation: 4
-  },
+  primaryButton: { backgroundColor: '#818CF8', height: 55, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 10, shadowColor: '#818CF8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
   primaryButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 
-  footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, marginBottom: 20 },
+  footer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   footerText: { color: '#888', fontSize: 15 },
   linkText: { color: '#818CF8', fontWeight: 'bold', fontSize: 15 }
 });
