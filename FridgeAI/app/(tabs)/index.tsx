@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, View, StatusBar, Text, Keyboard, Image} from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, View, StatusBar, Text, Keyboard, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -9,8 +9,7 @@ import { Toast } from '@/components/ui/Toast';
 
 import { Colors } from '@/constants/theme';
 import { useThemeContext } from '@/context/ThemeContext';
-
-const SUGGESTIONS = ['Pollo', 'Arroz', 'Huevos', 'Tomate', 'Pasta', 'Queso', 'Leche', 'Atún'];
+import { useI18n } from '@/context/I18nContext';
 
 export default function HomeScreen() {
   const [ingredientes, setIngredientes] = useState('');
@@ -25,9 +24,15 @@ export default function HomeScreen() {
 
   const router = useRouter();
 
-  // tema actual
   const { isDark } = useThemeContext();
   const c = Colors[isDark ? 'dark' : 'light'];
+
+  const { language, t } = useI18n();
+
+  const SUGGESTIONS = useMemo(() => {
+    if (language === 'en') return ['Chicken', 'Rice', 'Eggs', 'Tomato', 'Pasta', 'Cheese', 'Milk', 'Tuna'];
+    return ['Pollo', 'Arroz', 'Huevos', 'Tomate', 'Pasta', 'Queso', 'Leche', 'Atún'];
+  }, [language]);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,15 +51,19 @@ export default function HomeScreen() {
   };
 
   const handleCrearReceta = async () => {
-    if (!ingredientes.trim()) return;
+    if (!ingredientes.trim()) {
+      setToast({ visible: true, message: t('home.noIngredients'), type: 'error' });
+      return;
+    }
+
     Keyboard.dismiss();
     setCargando(true);
     setReceta(null);
 
-    const resultado = await generarReceta(ingredientes);
+    const resultado = await generarReceta(ingredientes, language);
 
     if (resultado) setReceta(resultado);
-    else setToast({ visible: true, message: 'Error conectando con el chef', type: 'error' });
+    else setToast({ visible: true, message: t('home.geminiError'), type: 'error' });
 
     setCargando(false);
   };
@@ -75,9 +84,9 @@ export default function HomeScreen() {
       });
 
       if (error) throw error;
-      setToast({ visible: true, message: '¡Receta guardada en favoritos!', type: 'success' });
+      setToast({ visible: true, message: t('home.saved'), type: 'success' });
     } catch (e: any) {
-      setToast({ visible: true, message: 'No se pudo guardar', type: 'error' });
+      setToast({ visible: true, message: t('home.saveError'), type: 'error' });
     } finally {
       setGuardando(false);
     }
@@ -93,7 +102,6 @@ export default function HomeScreen() {
     setReceta(null);
   };
 
-  // Colores “derivados” (para mantener tu estilo)
   const bg = c.background;
   const cardBg = isDark ? '#1E1E1E' : '#F3F4F6';
   const border = isDark ? '#333' : '#E5E7EB';
@@ -106,21 +114,19 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={bg} />
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greeting, { color: subtle }]}>Hola, Chef 👋</Text>
+            <Text style={[styles.greeting, { color: subtle }]}>{t('home.hello')} 👋</Text>
             <Text style={[styles.title, { color: c.text }]}>
               Fridge<Text style={[styles.brandColor, { color: tint }]}>AI</Text>
             </Text>
           </View>
 
-          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={[styles.avatarBtn, { backgroundColor: cardBg, borderColor: border }]}>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/profile')}
+            style={[styles.avatarBtn, { backgroundColor: cardBg, borderColor: border }]}
+          >
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
             ) : (
@@ -129,13 +135,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Input */}
         <View style={styles.inputSection}>
           <View style={styles.labelRow}>
-            <Text style={[styles.label, { color: tint }]}>¿Qué hay en tu nevera?</Text>
+            <Text style={[styles.label, { color: tint }]}>{t('home.fridgeQuestion')}</Text>
             {ingredientes.length > 0 && (
               <TouchableOpacity onPress={() => setIngredientes('')}>
-                <Text style={[styles.clearText, { color: danger }]}>Borrar todo</Text>
+                <Text style={[styles.clearText, { color: danger }]}>{t('home.clearAll')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -143,7 +148,7 @@ export default function HomeScreen() {
           <View style={styles.inputWrapper}>
             <TextInput
               style={[styles.input, { backgroundColor: cardBg, color: c.text, borderColor: border }]}
-              placeholder="Ej: 2 huevos, limón, arroz..."
+              placeholder={t('home.placeholder')}
               placeholderTextColor={isDark ? '#555' : '#9CA3AF'}
               value={ingredientes}
               onChangeText={setIngredientes}
@@ -151,7 +156,11 @@ export default function HomeScreen() {
             />
 
             <TouchableOpacity
-              style={[styles.sendButton, { backgroundColor: tint }, !ingredientes.trim() && [styles.disabledButton, { backgroundColor: isDark ? '#333' : '#CBD5E1' }]]}
+              style={[
+                styles.sendButton,
+                { backgroundColor: tint },
+                !ingredientes.trim() && [styles.disabledButton, { backgroundColor: isDark ? '#333' : '#CBD5E1' }],
+              ]}
               onPress={handleCrearReceta}
               disabled={cargando || !ingredientes.trim()}
             >
@@ -160,7 +169,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Sugerencias */}
         {!receta && !cargando && (
           <View style={styles.suggestionsContainer}>
             {SUGGESTIONS.map((item, index) => (
@@ -171,15 +179,13 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Loading */}
         {cargando && (
           <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, { color: subtle }]}>El chef está pensando...</Text>
+            <Text style={[styles.loadingText, { color: subtle }]}>{t('home.thinking')}</Text>
             <ActivityIndicator size="large" color={tint} />
           </View>
         )}
 
-        {/* Resultado */}
         {receta && (
           <View style={[styles.card, { backgroundColor: cardBg, borderColor: border }]}>
             <View style={styles.cardHeader}>
@@ -214,7 +220,7 @@ export default function HomeScreen() {
             <Text style={[styles.description, { color: isDark ? '#AAA' : '#475569' }]}>"{receta.descripcion}"</Text>
             <View style={[styles.divider, { backgroundColor: border }]} />
 
-            <Text style={[styles.sectionTitle, { color: c.text }]}>🛒 Ingredientes</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>🛒 {t('home.ingredients')}</Text>
             {receta.ingredientes_necesarios.map((item: string, i: number) => (
               <Text key={i} style={[styles.text, { color: isDark ? '#DDD' : '#334155' }]}>
                 • {item}
@@ -223,7 +229,7 @@ export default function HomeScreen() {
 
             <View style={{ height: 20 }} />
 
-            <Text style={[styles.sectionTitle, { color: c.text }]}>🍳 Pasos</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>🍳 {t('home.steps')}</Text>
             {receta.pasos.map((paso: string, i: number) => (
               <View key={i} style={styles.stepRow}>
                 <View style={[styles.stepCircle, { backgroundColor: tint }]}>
@@ -234,7 +240,7 @@ export default function HomeScreen() {
             ))}
 
             <TouchableOpacity style={[styles.newRecipeBtn, { backgroundColor: isDark ? '#2A2A2A' : '#E5E7EB', borderColor: border }]} onPress={clearAll}>
-              <Text style={[styles.newRecipeText, { color: tint }]}>✨ Generar nueva receta</Text>
+              <Text style={[styles.newRecipeText, { color: tint }]}>✨ {t('home.generateNew')}</Text>
             </TouchableOpacity>
           </View>
         )}

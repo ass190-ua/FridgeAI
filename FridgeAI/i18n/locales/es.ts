@@ -25,6 +25,9 @@ const es = {
     saved: 'Receta guardada en favoritos',
     saveError: 'No se pudo guardar',
     geminiError: 'Error conectando con el chef',
+    generate: 'Generar',
+    generateNew: 'Generar nueva receta',
+    noIngredients: 'Escribe ingredientes primero',
   },
 
   favorites: {
@@ -35,6 +38,8 @@ const es = {
     deleted: 'Receta eliminada',
     deleteError: 'No se pudo eliminar. Revisa tu conexión.',
     delete: 'Borrar',
+    ingredientsTitle: 'Ingredientes',
+    instructionsTitle: 'Instrucciones',
   },
 
   profile: {
@@ -51,6 +56,7 @@ const es = {
     photoDeleteError: 'No se pudo eliminar',
     spanish: 'Español',
     english: 'Inglés',
+
     favorites: 'Favoritos',
     level: 'Nivel',
     rank: 'Rango',
@@ -60,6 +66,8 @@ const es = {
     rankCook: 'Cocinillas',
     rankChef: 'Chef',
     rankMaster: 'Maestro',
+
+    logoutError: 'Error al salir',
   },
 
   login: {

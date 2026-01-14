@@ -25,6 +25,9 @@ const en = {
     saved: 'Recipe saved to favorites',
     saveError: "Couldn't save",
     geminiError: 'Error contacting the chef',
+    generate: 'Generate',
+    generateNew: 'Generate new recipe',
+    noIngredients: 'Write ingredients first',
   },
 
   favorites: {
@@ -35,6 +38,8 @@ const en = {
     deleted: 'Recipe deleted',
     deleteError: "Couldn't delete. Check your connection.",
     delete: 'Delete',
+    ingredientsTitle: 'Ingredients',
+    instructionsTitle: 'Instructions',
   },
 
   profile: {
@@ -51,6 +56,7 @@ const en = {
     photoDeleteError: "Couldn't delete",
     spanish: 'Spanish',
     english: 'English',
+
     favorites: 'Favorites',
     level: 'Level',
     rank: 'Rank',
@@ -60,6 +66,8 @@ const en = {
     rankCook: 'Home cook',
     rankChef: 'Chef',
     rankMaster: 'Master',
+
+    logoutError: 'Error signing out',
   },
 
   login: {
