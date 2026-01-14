@@ -19,6 +19,7 @@ import { Toast } from '@/components/ui/Toast';
 
 import { useThemeContext } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
+import { useI18n } from '@/context/I18nContext';
 
 export default function ProfileScreen() {
   const [userEmail, setUserEmail] = useState('');
@@ -28,6 +29,8 @@ export default function ProfileScreen() {
 
   const { isDark, setTheme } = useThemeContext();
   const c = Colors[isDark ? 'dark' : 'light'];
+
+  const { language, setLanguage, t } = useI18n();
 
   const tint = '#818CF8';
   const danger = '#FF4444';
@@ -40,7 +43,13 @@ export default function ProfileScreen() {
   const shadowBorder = isDark ? '#121212' : '#ffffff';
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  const [toast, setToast] = useState({
+    visible: false,
+    message: '',
+    type: 'success' as 'success' | 'error',
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -99,9 +108,9 @@ export default function ProfileScreen() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
       const { error: updateError } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl },
@@ -110,9 +119,9 @@ export default function ProfileScreen() {
       if (updateError) throw updateError;
 
       setAvatarUrl(publicUrl);
-      setToast({ visible: true, message: 'Foto actualizada', type: 'success' });
+      setToast({ visible: true, message: t('profile.photoUpdated'), type: 'success' });
     } catch (error: any) {
-      setToast({ visible: true, message: 'Error al subir foto', type: 'error' });
+      setToast({ visible: true, message: t('profile.photoUploadError'), type: 'error' });
     } finally {
       setUploading(false);
     }
@@ -125,16 +134,18 @@ export default function ProfileScreen() {
   const confirmDeleteImage = async () => {
     setDeleteModalVisible(false);
     setUploading(true);
+
     try {
       const { error } = await supabase.auth.updateUser({
         data: { avatar_url: null },
       });
+
       if (error) throw error;
 
       setAvatarUrl(null);
-      setToast({ visible: true, message: 'Foto eliminada correctamente', type: 'success' });
+      setToast({ visible: true, message: t('profile.photoDeleted'), type: 'success' });
     } catch (e) {
-      setToast({ visible: true, message: 'No se pudo eliminar', type: 'error' });
+      setToast({ visible: true, message: t('profile.photoDeleteError'), type: 'error' });
     } finally {
       setUploading(false);
     }
@@ -149,15 +160,22 @@ export default function ProfileScreen() {
 
   const currentLevel = Math.floor(favoritesCount / 3) + 1;
 
-  const getRankName = (count: number) => {
-    if (count < 3) return 'Novato';
-    if (count < 10) return 'Aprendiz';
-    if (count < 20) return 'Cocinillas';
-    if (count < 50) return 'Chef';
-    return 'Maestro';
+  const getRankKey = (count: number) => {
+    if (count < 3) return 'profile.rankNovice';
+    if (count < 10) return 'profile.rankApprentice';
+    if (count < 20) return 'profile.rankCook';
+    if (count < 50) return 'profile.rankChef';
+    return 'profile.rankMaster';
   };
 
-  const currentRank = getRankName(favoritesCount);
+  const currentRank = t(getRankKey(favoritesCount));
+
+  const languageLabel = language === 'es' ? t('profile.spanish') : t('profile.english');
+
+  const chooseLanguage = (lng: 'es' | 'en') => {
+    setLanguage(lng);
+    setLanguageModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
@@ -166,10 +184,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <TouchableOpacity
               onPress={handlePickImage}
-              style={[
-                styles.avatarWrapper,
-                { borderColor: border, backgroundColor: surface },
-              ]}
+              style={[styles.avatarWrapper, { borderColor: border, backgroundColor: surface }]}
               disabled={uploading}
             >
               {avatarUrl ? (
@@ -190,10 +205,7 @@ export default function ProfileScreen() {
             {!uploading && (
               <TouchableOpacity
                 onPress={handlePickImage}
-                style={[
-                  styles.editIconBadge,
-                  { backgroundColor: tint, borderColor: shadowBorder },
-                ]}
+                style={[styles.editIconBadge, { backgroundColor: tint, borderColor: shadowBorder }]}
               >
                 <Ionicons name="camera" size={14} color="white" />
               </TouchableOpacity>
@@ -202,10 +214,7 @@ export default function ProfileScreen() {
             {!uploading && avatarUrl && (
               <TouchableOpacity
                 onPress={handleRemoveImagePress}
-                style={[
-                  styles.deleteIconBadge,
-                  { backgroundColor: danger, borderColor: shadowBorder },
-                ]}
+                style={[styles.deleteIconBadge, { backgroundColor: danger, borderColor: shadowBorder }]}
               >
                 <Ionicons name="trash" size={14} color="white" />
               </TouchableOpacity>
@@ -215,32 +224,32 @@ export default function ProfileScreen() {
           <Text style={[styles.email, { color: c.text }]}>{userEmail}</Text>
 
           <View style={[styles.roleBadge, { backgroundColor: surface2 }]}>
-            <Text style={[styles.roleText, { color: muted2 }]}>{currentRank} 👨‍🍳</Text>
+            <Text style={[styles.roleText, { color: muted2 }]}>{currentRank}</Text>
           </View>
         </View>
 
         <View style={[styles.statsRow, { backgroundColor: surface, borderColor: border }]}>
           <View style={styles.statBox}>
             <Text style={[styles.statNumber, { color: c.text }]}>{favoritesCount}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Favoritos</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.favorites')}</Text>
           </View>
 
           <View style={[styles.statDivider, { backgroundColor: border }]} />
 
           <View style={styles.statBox}>
             <Text style={[styles.statNumber, { color: c.text }]}>{currentLevel}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Nivel</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.level')}</Text>
           </View>
 
           <View style={[styles.statDivider, { backgroundColor: border }]} />
 
           <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: c.text }]}>{currentRank === 'Maestro' ? '👑' : '🔪'}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Rango</Text>
+            <Text style={[styles.statNumber, { color: c.text }]}>{currentRank === t('profile.rankMaster') ? '👑' : '🔪'}</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.rank')}</Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionHeader, { color: muted }]}>Preferencias</Text>
+        <Text style={[styles.sectionHeader, { color: muted }]}>{t('profile.preferences')}</Text>
 
         <View style={[styles.cardContainer, { backgroundColor: surface, borderColor: border }]}>
           <View style={styles.row}>
@@ -248,7 +257,7 @@ export default function ProfileScreen() {
               <View style={[styles.iconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)' }]}>
                 <Ionicons name="moon" size={20} color={tint} />
               </View>
-              <Text style={[styles.rowLabel, { color: c.text }]}>Modo Oscuro</Text>
+              <Text style={[styles.rowLabel, { color: c.text }]}>{t('profile.darkMode')}</Text>
             </View>
 
             <Switch
@@ -263,22 +272,22 @@ export default function ProfileScreen() {
 
           <View style={[styles.divider, { backgroundColor: border }]} />
 
-          <TouchableOpacity style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => setLanguageModalVisible(true)}>
             <View style={styles.rowLeft}>
               <View style={[styles.iconBox, { backgroundColor: 'rgba(74, 222, 128, 0.12)' }]}>
                 <Ionicons name="language" size={20} color="#4ADE80" />
               </View>
-              <Text style={[styles.rowLabel, { color: c.text }]}>Idioma</Text>
+              <Text style={[styles.rowLabel, { color: c.text }]}>{t('profile.language')}</Text>
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Text style={{ color: muted }}>Español</Text>
+              <Text style={{ color: muted }}>{languageLabel}</Text>
               <Ionicons name="chevron-forward" size={16} color={muted} />
             </View>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.sectionHeader, { color: muted }]}>Cuenta</Text>
+        <Text style={[styles.sectionHeader, { color: muted }]}>{t('profile.account')}</Text>
 
         <View style={[styles.cardContainer, { backgroundColor: surface, borderColor: border }]}>
           <TouchableOpacity style={styles.row} onPress={handleLogout}>
@@ -286,7 +295,7 @@ export default function ProfileScreen() {
               <View style={[styles.iconBox, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
                 <Ionicons name="log-out-outline" size={20} color={danger} />
               </View>
-              <Text style={[styles.rowLabel, { color: danger }]}>Cerrar Sesión</Text>
+              <Text style={[styles.rowLabel, { color: danger }]}>{t('profile.logout')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -300,24 +309,53 @@ export default function ProfileScreen() {
             <View style={styles.modalIconCircle}>
               <Ionicons name="trash-outline" size={32} color={danger} />
             </View>
-            <Text style={[styles.modalTitle, { color: c.text }]}>¿Eliminar foto?</Text>
-            <Text style={[styles.modalText, { color: muted2 }]}>Volverás a ver tus iniciales en el perfil.</Text>
+
+            <Text style={[styles.modalTitle, { color: c.text }]}>{t('profile.deletePhotoTitle')}</Text>
+            <Text style={[styles.modalText, { color: muted2 }]}>{t('profile.deletePhotoText')}</Text>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 onPress={() => setDeleteModalVisible(false)}
                 style={[styles.modalBtnCancel, { backgroundColor: surface2 }]}
               >
-                <Text style={[styles.modalBtnTextCancel, { color: c.text }]}>Cancelar</Text>
+                <Text style={[styles.modalBtnTextCancel, { color: c.text }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={confirmDeleteImage}
-                style={[styles.modalBtnConfirm, { backgroundColor: danger }]}
-              >
-                <Text style={styles.modalBtnTextConfirm}>Eliminar</Text>
+              <TouchableOpacity onPress={confirmDeleteImage} style={[styles.modalBtnConfirm, { backgroundColor: danger }]}>
+                <Text style={styles.modalBtnTextConfirm}>{t('common.delete')}</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={languageModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.languageModalContent, { backgroundColor: surface, borderColor: border }]}>
+            <Text style={[styles.languageTitle, { color: c.text }]}>{t('profile.language')}</Text>
+
+            <TouchableOpacity
+              style={[styles.languageOption, { borderColor: border, backgroundColor: surface2 }]}
+              onPress={() => chooseLanguage('es')}
+            >
+              <Text style={[styles.languageOptionText, { color: c.text }]}>{t('profile.spanish')}</Text>
+              {language === 'es' ? <Ionicons name="checkmark" size={20} color={tint} /> : null}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.languageOption, { borderColor: border, backgroundColor: surface2 }]}
+              onPress={() => chooseLanguage('en')}
+            >
+              <Text style={[styles.languageOptionText, { color: c.text }]}>{t('profile.english')}</Text>
+              {language === 'en' ? <Ionicons name="checkmark" size={20} color={tint} /> : null}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.languageCancel, { backgroundColor: surface2 }]}
+              onPress={() => setLanguageModalVisible(false)}
+            >
+              <Text style={[styles.languageCancelText, { color: c.text }]}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -425,6 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+
   modalContent: {
     width: '100%',
     maxWidth: 320,
@@ -450,4 +489,41 @@ const styles = StyleSheet.create({
   modalBtnTextCancel: { fontWeight: '600' },
   modalBtnConfirm: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
   modalBtnTextConfirm: { color: 'white', fontWeight: 'bold' },
+
+  languageModalContent: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+  },
+  languageTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  languageOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  languageCancel: {
+    marginTop: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  languageCancelText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

@@ -1,4 +1,4 @@
-// app/_layout.tsx  (o donde tengas este RootLayout)
+// app/_layout.tsx
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -6,17 +6,15 @@ import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
-// provider de tema de la carpeta context
 import { ThemeProvider, useThemeContext } from '@/context/ThemeContext';
+import { I18nProvider } from '@/context/I18nContext';
 
-//Esta función contiene tu lógica actual + el theme dinámico
 function RootLayoutInner() {
   const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
   const segments = useSegments();
 
-  //isDark viene de tu ThemeContext
   const { isDark } = useThemeContext();
 
   useEffect(() => {
@@ -61,7 +59,6 @@ function RootLayoutInner() {
     );
   }
 
-  //React Navigation theme (tabs, headers, etc.)
   const navigationTheme = isDark ? DarkTheme : DefaultTheme;
 
   return (
@@ -81,11 +78,12 @@ function RootLayoutInner() {
   );
 }
 
-//Este es el RootLayout real: envuelve toda la app con tu ThemeProvider
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutInner />
+      <I18nProvider>
+        <RootLayoutInner />
+      </I18nProvider>
     </ThemeProvider>
   );
 }
