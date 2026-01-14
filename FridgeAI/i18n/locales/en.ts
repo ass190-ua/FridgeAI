@@ -51,6 +51,15 @@ const en = {
     photoDeleteError: "Couldn't delete",
     spanish: 'Spanish',
     english: 'English',
+    favorites: 'Favorites',
+    level: 'Level',
+    rank: 'Rank',
+
+    rankNovice: 'Novice',
+    rankApprentice: 'Apprentice',
+    rankCook: 'Home cook',
+    rankChef: 'Chef',
+    rankMaster: 'Master',
   },
 
   login: {

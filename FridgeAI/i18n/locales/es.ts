@@ -51,6 +51,15 @@ const es = {
     photoDeleteError: 'No se pudo eliminar',
     spanish: 'Español',
     english: 'Inglés',
+    favorites: 'Favoritos',
+    level: 'Nivel',
+    rank: 'Rango',
+
+    rankNovice: 'Novato',
+    rankApprentice: 'Aprendiz',
+    rankCook: 'Cocinillas',
+    rankChef: 'Chef',
+    rankMaster: 'Maestro',
   },
 
   login: {

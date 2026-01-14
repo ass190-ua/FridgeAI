@@ -160,15 +160,15 @@ export default function ProfileScreen() {
 
   const currentLevel = Math.floor(favoritesCount / 3) + 1;
 
-  const getRankName = (count: number) => {
-    if (count < 3) return 'Novato';
-    if (count < 10) return 'Aprendiz';
-    if (count < 20) return 'Cocinillas';
-    if (count < 50) return 'Chef';
-    return 'Maestro';
+  const getRankKey = (count: number) => {
+    if (count < 3) return 'profile.rankNovice';
+    if (count < 10) return 'profile.rankApprentice';
+    if (count < 20) return 'profile.rankCook';
+    if (count < 50) return 'profile.rankChef';
+    return 'profile.rankMaster';
   };
 
-  const currentRank = getRankName(favoritesCount);
+  const currentRank = t(getRankKey(favoritesCount));
 
   const languageLabel = language === 'es' ? t('profile.spanish') : t('profile.english');
 
@@ -231,21 +231,21 @@ export default function ProfileScreen() {
         <View style={[styles.statsRow, { backgroundColor: surface, borderColor: border }]}>
           <View style={styles.statBox}>
             <Text style={[styles.statNumber, { color: c.text }]}>{favoritesCount}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Favoritos</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.favorites')}</Text>
           </View>
 
           <View style={[styles.statDivider, { backgroundColor: border }]} />
 
           <View style={styles.statBox}>
             <Text style={[styles.statNumber, { color: c.text }]}>{currentLevel}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Nivel</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.level')}</Text>
           </View>
 
           <View style={[styles.statDivider, { backgroundColor: border }]} />
 
           <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: c.text }]}>{currentRank === 'Maestro' ? '👑' : '🔪'}</Text>
-            <Text style={[styles.statLabel, { color: muted }]}>Rango</Text>
+            <Text style={[styles.statNumber, { color: c.text }]}>{currentRank === t('profile.rankMaster') ? '👑' : '🔪'}</Text>
+            <Text style={[styles.statLabel, { color: muted }]}>{t('profile.rank')}</Text>
           </View>
         </View>
 
