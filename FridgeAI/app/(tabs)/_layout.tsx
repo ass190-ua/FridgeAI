@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
+import { useI18n } from '@/context/I18nContext';
 
 export default function TabLayout() {
   const theme = useTheme();
-
-  // theme.dark es true si está usando DarkTheme
   const isDark = theme.dark;
+
+  const { t } = useI18n();
 
   return (
     <Tabs
@@ -15,7 +16,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: isDark ? '#121212' : '#ffffff',
           borderTopColor: isDark ? '#333' : '#ddd',
-          height: 60,
+          height: 70,
           paddingBottom: 8,
           paddingTop: 8,
         },
@@ -26,7 +27,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Cocina',
+          title: t('tabs.cook'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="restaurant-outline" size={24} color={color} />
           ),
@@ -36,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoritos',
+          title: t('tabs.favorites'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="heart-outline" size={24} color={color} />
           ),
@@ -46,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="person-outline" size={24} color={color} />
           ),

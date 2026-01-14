@@ -18,6 +18,7 @@ import { Toast } from '@/components/ui/Toast';
 
 import { Colors } from '@/constants/theme';
 import { useThemeContext } from '@/context/ThemeContext';
+import { useI18n } from '@/context/I18nContext';
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<any[]>([]);
@@ -29,6 +30,8 @@ export default function FavoritesScreen() {
 
   const { isDark } = useThemeContext();
   const c = Colors[isDark ? 'dark' : 'light'];
+
+  const { t } = useI18n();
 
   const tint = '#818CF8';
   const border = isDark ? '#333' : '#E5E7EB';
@@ -69,9 +72,9 @@ export default function FavoritesScreen() {
 
     if (error) {
       setFavorites(previousFavorites);
-      showToast('No se pudo eliminar. Revisa tu conexión.', 'error');
+      showToast(t('favorites.deleteError'), 'error');
     } else {
-      showToast('Receta eliminada', 'success');
+      showToast(t('favorites.deleted'), 'success');
     }
   };
 
@@ -79,7 +82,7 @@ export default function FavoritesScreen() {
     return (
       <TouchableOpacity style={styles.deleteAction} onPress={() => handleDelete(id)}>
         <Ionicons name="trash" size={24} color="white" />
-        <Text style={styles.deleteText}>Borrar</Text>
+        <Text style={styles.deleteText}>{t('favorites.delete')}</Text>
       </TouchableOpacity>
     );
   };
@@ -114,7 +117,7 @@ export default function FavoritesScreen() {
               </View>
 
               <Text style={[styles.cardDate, { color: isDark ? '#666' : '#94A3B8' }]}>
-                Guardado el {new Date(item.created_at).toLocaleDateString()}
+                {t('favorites.savedOn')} {new Date(item.created_at).toLocaleDateString()}
               </Text>
             </View>
 
@@ -128,7 +131,7 @@ export default function FavoritesScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-        <Text style={[styles.headerTitle, { color: c.text }]}>Mis Favoritos ❤️</Text>
+        <Text style={[styles.headerTitle, { color: c.text }]}>{t('favorites.title')} ❤️</Text>
 
         <FlatList
           data={favorites}
@@ -143,8 +146,8 @@ export default function FavoritesScreen() {
                 <View style={[styles.emptyIconBg, { backgroundColor: cardBg }]}>
                   <Ionicons name="book-outline" size={50} color={tint} />
                 </View>
-                <Text style={[styles.emptyText, { color: c.text }]}>Tu recetario está vacío</Text>
-                <Text style={[styles.emptySubText, { color: subtle }]}>Tus mejores creaciones aparecerán aquí.</Text>
+                <Text style={[styles.emptyText, { color: c.text }]}>{t('favorites.emptyTitle')}</Text>
+                <Text style={[styles.emptySubText, { color: subtle }]}>{t('favorites.emptySubtitle')}</Text>
               </View>
             ) : null
           }
@@ -158,7 +161,10 @@ export default function FavoritesScreen() {
               <ScrollView contentContainerStyle={{ padding: 30, paddingBottom: 80 }}>
                 <View style={styles.modalHeaderRow}>
                   <Text style={[styles.modalTitle, { color: c.text }]}>{selectedRecipe.nombre}</Text>
-                  <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: isDark ? '#FFF' : '#111827' }]}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    style={[styles.closeBtn, { backgroundColor: isDark ? '#FFF' : '#111827' }]}
+                  >
                     <Ionicons name="close" size={24} color={isDark ? '#333' : '#fff'} />
                   </TouchableOpacity>
                 </View>
@@ -181,7 +187,7 @@ export default function FavoritesScreen() {
 
                 <View style={[styles.divider, { backgroundColor: border }]} />
 
-                <Text style={[styles.sectionHeader, { color: tint }]}>🛒 Ingredientes</Text>
+                <Text style={[styles.sectionHeader, { color: tint }]}>🛒 {t('favorites.ingredientsTitle')}</Text>
                 <View style={[styles.ingList, { backgroundColor: isDark ? '#1A1A1A' : '#E5E7EB' }]}>
                   {selectedRecipe.ingredientes_necesarios.map((ing: string, i: number) => (
                     <View key={i} style={styles.ingRow}>
@@ -193,7 +199,7 @@ export default function FavoritesScreen() {
 
                 <View style={{ height: 20 }} />
 
-                <Text style={[styles.sectionHeader, { color: tint }]}>👨‍🍳 Instrucciones</Text>
+                <Text style={[styles.sectionHeader, { color: tint }]}>👨‍🍳 {t('favorites.instructionsTitle')}</Text>
                 {selectedRecipe.pasos.map((paso: string, i: number) => (
                   <View key={i} style={styles.stepBox}>
                     <View style={[styles.stepCircle, { backgroundColor: tint }]}>
