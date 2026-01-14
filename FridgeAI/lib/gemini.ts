@@ -29,7 +29,7 @@ export const listarModelosDisponibles = async () => {
 };
 
 // Función principal para generar receta (usando FETCH directo para evitar errores de librería)
-export const generarReceta = async (ingredientes: string) => {
+export const generarReceta = async (ingredientes: string, language: 'es' | 'en') => {
   try {
     // Usamos el modelo más estándar. Si falla, el diagnóstico nos dirá cuál usar.
     // OJO: La API pide el nombre completo, ej: "models/gemini-1.5-flash"
@@ -37,8 +37,12 @@ export const generarReceta = async (ingredientes: string) => {
     
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
 
+    const recipeLanguage = language === 'en' ? 'ENGLISH' : 'SPANISH';
+
     const prompt = `
       Eres un chef. Crea una receta con: ${ingredientes}.
+      La receta (valores del JSON) debe estar en ${recipeLanguage}.
+
       Responde SOLO con este JSON:
       {
         "nombre": "titulo",
@@ -70,7 +74,7 @@ export const generarReceta = async (ingredientes: string) => {
     return JSON.parse(jsonString);
 
   } catch (error) {
-    console.error("❌ Error generando receta:", error);
+    console.error(" Error generando receta:", error);
     return null;
   }
 };
