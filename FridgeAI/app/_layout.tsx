@@ -1,15 +1,23 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+// app/_layout.tsx  (o donde tengas este RootLayout)
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { View, ActivityIndicator, StatusBar } from 'react-native';
 
-export default function RootLayout() {
+// provider de tema de la carpeta context
+import { ThemeProvider, useThemeContext } from '@/context/ThemeContext';
+
+//Esta función contiene tu lógica actual + el theme dinámico
+function RootLayoutInner() {
   const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
   const segments = useSegments();
+
+  //isDark viene de tu ThemeContext
+  const { isDark } = useThemeContext();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -27,8 +35,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (!initialized) return;
 
-    // Arreglo del error de TypeScript: forzamos a string
-    const segment = segments[0] as string; 
+    // segments[0] es el primer trozo de la ruta actual (login, (tabs), etc.)
+    const segment = segments[0] as string;
     const inAuthGroup = segment === 'login' || segment === 'verify-code' || segment === 'change-password';
 
     if (!session && !inAuthGroup) {
@@ -40,22 +48,44 @@ export default function RootLayout() {
 
   if (!initialized) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212'}}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: isDark ? '#121212' : '#ffffff',
+        }}
+      >
         <ActivityIndicator size="large" color="#818CF8" />
       </View>
     );
   }
 
-  // ESTRUCTURA CORRECTA: StatusBar y ThemeProvider envuelven al Stack, no al revés.
+  //React Navigation theme (tabs, headers, etc.)
+  const navigationTheme = isDark ? DarkTheme : DefaultTheme;
+
   return (
-    <ThemeProvider value={DarkTheme}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <NavigationThemeProvider value={navigationTheme}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={isDark ? '#121212' : '#ffffff'}
+      />
+
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
         <Stack.Screen name="verify-code" />
         <Stack.Screen name="change-password" />
       </Stack>
+    </NavigationThemeProvider>
+  );
+}
+
+//Este es el RootLayout real: envuelve toda la app con tu ThemeProvider
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutInner />
     </ThemeProvider>
   );
 }
