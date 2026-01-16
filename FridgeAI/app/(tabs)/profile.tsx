@@ -1,3 +1,4 @@
+// app/(tabs)/profile.tsx
 import {
   StyleSheet,
   View,
@@ -8,11 +9,13 @@ import {
   Image,
   ActivityIndicator,
   Modal,
+  TextInput,
+  Keyboard,
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Toast } from '@/components/ui/Toast';
@@ -20,6 +23,9 @@ import { Toast } from '@/components/ui/Toast';
 import { useThemeContext } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { useI18n } from '@/context/I18nContext';
+
+import { useUserPreferences } from '@/context/UserPreferencesContext';
+import type { Diet, Allergen } from '@/lib/userPreferences';
 
 export default function ProfileScreen() {
   const [userEmail, setUserEmail] = useState('');
@@ -41,9 +47,16 @@ export default function ProfileScreen() {
   const muted = isDark ? '#888' : '#6B7280';
   const muted2 = isDark ? '#AAA' : '#475569';
   const shadowBorder = isDark ? '#121212' : '#ffffff';
+  const inputBg = isDark ? '#161616' : '#ffffff';
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  const [prefsModalVisible, setPrefsModalVisible] = useState(false);
+  const [customAllergyInput, setCustomAllergyInput] = useState('');
+
+  const { prefs, setDiet, toggleAllergen, addCustomAllergy, removeCustomAllergy, save, saving } =
+    useUserPreferences();
 
   const [toast, setToast] = useState({
     visible: false,
@@ -153,7 +166,7 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) setToast({ visible: true, message: 'Error al salir', type: 'error' });
+    if (error) setToast({ visible: true, message: t('profile.logoutError'), type: 'error' });
   };
 
   const getInitials = (email: string) => email.substring(0, 2).toUpperCase();
@@ -175,6 +188,59 @@ export default function ProfileScreen() {
   const chooseLanguage = (lng: 'es' | 'en') => {
     setLanguage(lng);
     setLanguageModalVisible(false);
+  };
+
+  const dietOptions: Diet[] = useMemo(
+    () => [
+      'none',
+      'omnivore',
+      'vegetarian',
+      'vegan',
+      'pescatarian',
+      'keto',
+      'gluten_free',
+      'lactose_free',
+    ],
+    []
+  );
+
+  const allergenOptions: Allergen[] = useMemo(
+    () => ['gluten', 'dairy', 'eggs', 'peanuts', 'tree_nuts', 'soy', 'fish', 'shellfish', 'sesame'],
+    []
+  );
+
+  const prefsSummary = useMemo(() => {
+    const dietLabel = t(`diet.${prefs.diet}`);
+    const allergiesLabel = prefs.allergies.length
+      ? prefs.allergies.map((a) => t(`allergen.${a}`)).join(', ')
+      : t('profile.none');
+
+    const customLabel = prefs.customAllergies.length ? prefs.customAllergies.join(', ') : t('profile.none');
+
+    return { dietLabel, allergiesLabel, customLabel };
+  }, [prefs.diet, prefs.allergies, prefs.customAllergies, t]);
+
+  const openPrefsModal = () => {
+    setCustomAllergyInput('');
+    setPrefsModalVisible(true);
+  };
+
+  const handleAddCustomAllergy = () => {
+    const text = customAllergyInput.trim();
+    if (!text) return;
+    addCustomAllergy(text);
+    setCustomAllergyInput('');
+    Keyboard.dismiss();
+  };
+
+  const closePrefsModalAndSave = async () => {
+    try {
+      await save();
+      setPrefsModalVisible(false);
+      setToast({ visible: true, message: t('profile.prefsSaved'), type: 'success' });
+    } catch (e) {
+      setToast({ visible: true, message: t('profile.prefsSaveError'), type: 'error' });
+    }
   };
 
   return (
@@ -285,6 +351,24 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={16} color={muted} />
             </View>
           </TouchableOpacity>
+
+          <View style={[styles.divider, { backgroundColor: border }]} />
+
+          <TouchableOpacity style={styles.row} onPress={openPrefsModal}>
+            <View style={styles.rowLeft}>
+              <View style={[styles.iconBox, { backgroundColor: 'rgba(129, 140, 248, 0.12)' }]}>
+                <Ionicons name="nutrition-outline" size={20} color={tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowLabel, { color: c.text }]}>{t('profile.foodPrefsTitle')}</Text>
+                <Text style={{ color: muted, marginTop: 2 }} numberOfLines={2}>
+                  {t('profile.diet')}: {prefsSummary.dietLabel} · {t('profile.allergies')}: {prefsSummary.allergiesLabel}
+                </Text>
+              </View>
+            </View>
+
+            <Ionicons name="chevron-forward" size={16} color={muted} />
+          </TouchableOpacity>
         </View>
 
         <Text style={[styles.sectionHeader, { color: muted }]}>{t('profile.account')}</Text>
@@ -303,6 +387,7 @@ export default function ProfileScreen() {
         <Text style={[styles.version, { color: isDark ? '#444' : '#94A3B8' }]}>FridgeAI v1.1.0</Text>
       </ScrollView>
 
+      {/* MODAL BORRAR FOTO */}
       <Modal visible={deleteModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: surface, borderColor: border }]}>
@@ -356,6 +441,156 @@ export default function ProfileScreen() {
             >
               <Text style={[styles.languageCancelText, { color: c.text }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL PREFERENCIAS ALIMENTARIAS */}
+      <Modal visible={prefsModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.prefsModalContent, { backgroundColor: surface, borderColor: border }]}>
+            <View style={styles.prefsHeader}>
+              <Text style={[styles.prefsTitle, { color: c.text }]}>{t('profile.foodPrefsTitle')}</Text>
+
+              <TouchableOpacity
+                onPress={() => setPrefsModalVisible(false)}
+                style={[styles.prefsCloseBtn, { backgroundColor: surface2, borderColor: border }]}
+                disabled={saving}
+              >
+                <Ionicons name="close" size={18} color={muted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
+              {/* DIETA */}
+              <Text style={[styles.prefsSectionTitle, { color: muted }]}>{t('profile.diet')}</Text>
+
+              <View style={styles.prefsGrid}>
+                {dietOptions.map((d) => {
+                  const selected = prefs.diet === d;
+                  return (
+                    <TouchableOpacity
+                      key={d}
+                      onPress={() => setDiet(d)}
+                      style={[
+                        styles.pill,
+                        {
+                          backgroundColor: selected ? 'rgba(129, 140, 248, 0.16)' : surface2,
+                          borderColor: selected ? tint : border,
+                        },
+                      ]}
+                      activeOpacity={0.9}
+                    >
+                      <Text style={{ color: selected ? tint : c.text, fontWeight: '700' }}>
+                        {t(`diet.${d}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={[styles.prefsDivider, { backgroundColor: border }]} />
+
+              {/* ALERGIAS */}
+              <Text style={[styles.prefsSectionTitle, { color: muted }]}>{t('profile.allergies')}</Text>
+
+              <View style={styles.prefsList}>
+                {allergenOptions.map((a) => {
+                  const checked = prefs.allergies.includes(a);
+                  return (
+                    <TouchableOpacity
+                      key={a}
+                      onPress={() => toggleAllergen(a)}
+                      style={[
+                        styles.allergenRow,
+                        { backgroundColor: surface2, borderColor: border },
+                      ]}
+                      activeOpacity={0.9}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            { borderColor: checked ? tint : border, backgroundColor: checked ? tint : 'transparent' },
+                          ]}
+                        >
+                          {checked ? <Ionicons name="checkmark" size={16} color="#000" /> : null}
+                        </View>
+                        <Text style={{ color: c.text, fontWeight: '700' }}>{t(`allergen.${a}`)}</Text>
+                      </View>
+
+                      {checked ? <Ionicons name="checkmark-circle" size={18} color={tint} /> : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={[styles.prefsDivider, { backgroundColor: border }]} />
+
+              {/* ALERGIAS CUSTOM */}
+              <Text style={[styles.prefsSectionTitle, { color: muted }]}>{t('profile.customAllergies')}</Text>
+
+              <View style={[styles.customInputRow, { borderColor: border, backgroundColor: inputBg }]}>
+                <TextInput
+                  value={customAllergyInput}
+                  onChangeText={setCustomAllergyInput}
+                  placeholder={t('profile.customAllergyPlaceholder')}
+                  placeholderTextColor={isDark ? '#555' : '#9CA3AF'}
+                  style={[styles.customInput, { color: c.text }]}
+                  returnKeyType="done"
+                  onSubmitEditing={handleAddCustomAllergy}
+                />
+                <TouchableOpacity
+                  onPress={handleAddCustomAllergy}
+                  style={[styles.addBtn, { backgroundColor: tint }]}
+                  activeOpacity={0.9}
+                >
+                  <Ionicons name="add" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              {prefs.customAllergies.length > 0 ? (
+                <View style={styles.chipsWrap}>
+                  {prefs.customAllergies.map((item) => (
+                    <View
+                      key={item}
+                      style={[styles.chip, { backgroundColor: surface2, borderColor: border }]}
+                    >
+                      <Text style={{ color: c.text, fontWeight: '700' }} numberOfLines={1}>
+                        {item}
+                      </Text>
+                      <TouchableOpacity onPress={() => removeCustomAllergy(item)} style={{ paddingLeft: 8 }}>
+                        <Ionicons name="close" size={16} color={muted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={{ color: muted, marginTop: 8 }}>{t('profile.none')}</Text>
+              )}
+            </ScrollView>
+
+            <View style={[styles.prefsFooter, { borderTopColor: border }]}>
+              <TouchableOpacity
+                onPress={() => setPrefsModalVisible(false)}
+                style={[styles.prefsBtn, { backgroundColor: surface2 }]}
+                disabled={saving}
+              >
+                <Text style={{ color: c.text, fontWeight: '800' }}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={closePrefsModalAndSave}
+                style={[styles.prefsBtn, { backgroundColor: tint, opacity: saving ? 0.6 : 1 }]}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#000" />
+                ) : (
+                  <Text style={{ color: '#000', fontWeight: '900' }}>{t('common.save')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -525,5 +760,123 @@ const styles = StyleSheet.create({
   languageCancelText: {
     fontSize: 15,
     fontWeight: '700',
+  },
+
+  prefsModalContent: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    maxHeight: '85%',
+  },
+  prefsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  prefsTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  prefsCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  prefsSectionTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  prefsDivider: {
+    height: 1,
+    marginVertical: 16,
+  },
+  prefsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  pill: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  prefsList: {
+    gap: 10,
+  },
+  allergenRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 8,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  customInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 12,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    maxWidth: '100%',
+  },
+  prefsFooter: {
+    borderTopWidth: 1,
+    paddingTop: 12,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  prefsBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
   },
 });

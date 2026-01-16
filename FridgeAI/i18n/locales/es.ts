@@ -68,6 +68,37 @@ const es = {
     rankMaster: 'Maestro',
 
     logoutError: 'Error al salir',
+    foodPrefsTitle: 'Preferencias alimentarias',
+    diet: 'Dieta',
+    allergies: 'Alergias',
+    customAllergies: 'Alergias personalizadas',
+    customAllergyPlaceholder: 'Añade una alergia (ej: kiwi)',
+    none: 'Ninguna',
+    prefsSaved: 'Preferencias guardadas',
+    prefsSaveError: 'No se pudieron guardar las preferencias',
+  },
+
+  diet: {
+    none: 'Sin preferencia',
+    omnivore: 'Omnívora',
+    vegetarian: 'Vegetariana',
+    vegan: 'Vegana',
+    pescatarian: 'Pescetariana',
+    keto: 'Keto',
+    gluten_free: 'Sin gluten',
+    lactose_free: 'Sin lactosa',
+  },
+
+  allergen: {
+    gluten: 'Gluten',
+    dairy: 'Lácteos',
+    eggs: 'Huevos',
+    peanuts: 'Cacahuetes',
+    tree_nuts: 'Frutos secos',
+    soy: 'Soja',
+    fish: 'Pescado',
+    shellfish: 'Marisco',
+    sesame: 'Sésamo',
   },
 
   login: {

@@ -68,7 +68,40 @@ const en = {
     rankMaster: 'Master',
 
     logoutError: 'Error signing out',
+
+    foodPrefsTitle: 'Food preferences',
+    diet: 'Diet',
+    allergies: 'Allergies',
+    customAllergies: 'Custom allergies',
+    customAllergyPlaceholder: 'Add an allergy (e.g. kiwi)',
+    none: 'None',
+    prefsSaved: 'Preferences saved',
+    prefsSaveError: "Couldn't save preferences",
   },
+
+  diet: {
+    none: 'No preference',
+    omnivore: 'Omnivore',
+    vegetarian: 'Vegetarian',
+    vegan: 'Vegan',
+    pescatarian: 'Pescatarian',
+    keto: 'Keto',
+    gluten_free: 'Gluten-free',
+    lactose_free: 'Lactose-free',
+  },
+
+  allergen: {
+    gluten: 'Gluten',
+    dairy: 'Dairy',
+    eggs: 'Eggs',
+    peanuts: 'Peanuts',
+    tree_nuts: 'Tree nuts',
+    soy: 'Soy',
+    fish: 'Fish',
+    shellfish: 'Shellfish',
+    sesame: 'Sesame',
+  },
+  
 
   login: {
     subtitle: 'Your smart kitchen',

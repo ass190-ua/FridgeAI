@@ -10,6 +10,7 @@ import { Toast } from '@/components/ui/Toast';
 import { Colors } from '@/constants/theme';
 import { useThemeContext } from '@/context/ThemeContext';
 import { useI18n } from '@/context/I18nContext';
+import { useUserPreferences } from '@/context/UserPreferencesContext';
 
 export default function HomeScreen() {
   const [ingredientes, setIngredientes] = useState('');
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const c = Colors[isDark ? 'dark' : 'light'];
 
   const { language, t } = useI18n();
+  const { prefs } = useUserPreferences();
 
   const SUGGESTIONS = useMemo(() => {
     if (language === 'en') return ['Chicken', 'Rice', 'Eggs', 'Tomato', 'Pasta', 'Cheese', 'Milk', 'Tuna'];
@@ -60,7 +62,7 @@ export default function HomeScreen() {
     setCargando(true);
     setReceta(null);
 
-    const resultado = await generarReceta(ingredientes, language);
+    const resultado = await generarReceta(ingredientes, language, prefs);
 
     if (resultado) setReceta(resultado);
     else setToast({ visible: true, message: t('home.geminiError'), type: 'error' });
