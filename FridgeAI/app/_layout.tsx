@@ -8,6 +8,7 @@ import { View, ActivityIndicator, StatusBar } from 'react-native';
 
 import { ThemeProvider, useThemeContext } from '@/context/ThemeContext';
 import { I18nProvider } from '@/context/I18nContext';
+import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 
 function RootLayoutInner() {
   const [session, setSession] = useState<Session | null>(null);
@@ -33,7 +34,6 @@ function RootLayoutInner() {
   useEffect(() => {
     if (!initialized) return;
 
-    // segments[0] es el primer trozo de la ruta actual (login, (tabs), etc.)
     const segment = segments[0] as string;
     const inAuthGroup = segment === 'login' || segment === 'verify-code' || segment === 'change-password';
 
@@ -82,7 +82,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <I18nProvider>
-        <RootLayoutInner />
+        <UserPreferencesProvider>
+          <RootLayoutInner />
+        </UserPreferencesProvider>
       </I18nProvider>
     </ThemeProvider>
   );
