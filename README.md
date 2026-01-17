@@ -12,6 +12,8 @@
 
 **FridgeAI** es una aplicación móvil desarrollada con **Expo (React Native)** que utiliza **Inteligencia Artificial (Gemini)** para generar recetas personalizadas a partir de los ingredientes que tienes disponibles en tu nevera.
 
+Incluye favoritos, perfil con avatar, modo claro/oscuro, idiomas (ES/EN) y preferencias alimentarias (dieta + alergias).
+
 La aplicación se apoya en **Supabase** para la gestión de datos y ofrece una experiencia rápida, intuitiva y pensada para el día a día.
 
 ---
@@ -19,10 +21,14 @@ La aplicación se apoya en **Supabase** para la gestión de datos y ofrece una e
 ## ✨ Características Principales
 
 - 🥕 Introducción manual de ingredientes disponibles  
-- 🤖 Generación instantánea de recetas mediante IA (Gemini)  
-- 📱 Aplicación móvil multiplataforma (Android / iOS)  
-- ⚡ Arranque rápido con Expo  
-- 🔐 Configuración segura mediante variables de entorno  
+- 🤖 Generación de recetas con IA (Gemini) usando ingredientes como “disponibles” (no obligatorios)
+- 🚫 Restricciones por **dieta** y **alergias** aplicadas al prompt (evita ingredientes prohibidos)
+- 🌙 Modo claro/oscuro (con estado global)
+- 🌍 i18n (Español / Inglés) con selector en Perfil
+- ❤️ Favoritos guardados en Supabase
+- 👤 Avatar (subida a Supabase Storage)
+- 📱 Multiplataforma (Android / iOS) con Expo Go
+- 🔐 Configuración mediante variables de entorno
 
 ---
 
@@ -136,12 +142,27 @@ Tras ejecutar el comando, se mostrará un **código QR** en la terminal:
 
 ---
 
+## Cómo Probarla
+
+1. Inicia sesión / crea cuenta
+
+2. Escribe ingredientes y genera una receta
+
+3. Guarda en favoritos
+
+4. En Perfil: cambia idioma / tema y configura dieta + alergias
+
+5. Genera otra receta y comprueba que respeta restricciones
+
+
 ## 🛠️ Estructura del Proyecto
 
 ```text
 /app         → Pantallas y navegación (Expo Router)
 /components  → Componentes reutilizables de UI
 /lib         → Conexión con Supabase y Gemini AI
+/context estados globales (tema, idioma, preferencias)
+/i18n traducciones (es/en)
 /assets      → Imágenes, iconos y fuentes
 ```
 
