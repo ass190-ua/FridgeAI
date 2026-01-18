@@ -180,6 +180,27 @@ eas build -p android --profile preview
 
 ---
 
+## 📲 Descargar la App (Android)
+
+FridgeAI está disponible **solo para Android**.
+
+📌 Actualmente no existe versión para iOS, ya que para publicarla en dispositivos Apple es necesario pagar la licencia de desarrollador.  
+📌 Tampoco está publicada en **Google Play Store**, ya que también requiere un pago para poder subir aplicaciones.
+
+✅ Puedes descargar e instalar la APK desde el siguiente código QR:
+
+<p align="center">
+  <img src="./FridgeAI/assets/images/QR.jpeg" width="250" />
+</p>
+
+⚠️ **Importante:**  
+Al instalar la APK, Android puede mostrar un aviso indicando que debes **permitir instalaciones desde orígenes desconocidos** o **fuentes externas**.
+
+- El mensaje exacto puede variar dependiendo del modelo y la versión de Android.
+- Solo tendrás que aceptar el permiso una vez para poder instalar la app correctamente.
+
+---
+
 ## 🧪 Tecnologías Utilizadas
 
 - **Expo / React Native**
